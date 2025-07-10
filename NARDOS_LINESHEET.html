@@ -1,0 +1,971 @@
+</html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linesheet Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #ffffff; /* Page background is white */
+            color: #333;
+            font-size: 14px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+        .container {
+            max-width: calc(100vw - 20px);
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .header-section {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px 0;
+            background: none; /* Removed background */
+            border-radius: 8px;
+            box-shadow: none; /* Removed shadow */
+        }
+        .banner-container {
+            padding: 15px 0;
+            background-color: transparent; /* Removed specific background color from banner */
+            box-shadow: none; /* Removed shadow to make it blend with background */
+            border-radius: 8px; /* Kept border-radius for consistency with outer container shape if needed */
+            margin-bottom: 15px;
+        }
+        .banner-container h2 {
+            font-family: "Bangla MN", sans-serif;
+            color: #333;
+            margin: 0;
+            font-size: 2.5em;
+            letter-spacing: 2px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .controls {
+            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .controls label {
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .controls input[type="text"],
+        .controls select,
+        .controls textarea {
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+            flex-grow: 1;
+            max-width: 180px;
+        }
+        .controls button {
+            flex-shrink: 0;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            flex-grow: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            min-width: 800px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 7px 10px;
+            text-align: left;
+            vertical-align: middle;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #f2f2f2;
+            cursor: pointer;
+            position: relative;
+            padding-right: 25px;
+            font-weight: bold;
+        }
+        th:hover {
+            background-color: #e0e0e0;
+        }
+        th .sort-arrow {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+            color: #888;
+        }
+        td.description-cell {
+            white-space: pre-wrap;
+            max-width: 250px;
+            word-wrap: break-word;
+        }
+        .editable-input, .editable-select, .editable-textarea {
+            width: calc(100% - 10px);
+            border: 1px solid #ccc;
+            padding: 4px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            box-sizing: border-box;
+        }
+        .editable-textarea {
+            min-height: 30px;
+            resize: vertical;
+        }
+        .price-cell {
+            text-align: right;
+        }
+        .original-price, .price-diff {
+            display: none;
+        }
+        .current-price-input {
+            width: calc(100% - 10px);
+            text-align: right;
+            vertical-align: middle;
+        }
+        .status-A { color: green; font-weight: bold; }
+        .status-NA { color: orange; font-weight: bold; }
+        .add-row-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2em;
+            line-height: 1;
+            margin-left: 10px;
+        }
+        .add-row-btn:hover {
+            background-color: #45a049;
+        }
+        .image-cell {
+            text-align: center;
+            position: relative;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .image-cell .drop-zone-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.1);
+            border: 2px dashed transparent;
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out, border-color 0.2s ease-in-out;
+            z-index: 10;
+        }
+        .image-cell.drag-over .drop-zone-overlay {
+            opacity: 1;
+            border-color: #007bff;
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+        .image-cell.drag-over .drop-zone-overlay::before {
+            content: "Drop Image Here";
+            color: #007bff;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .item-image {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        .image-input {
+            display: none;
+        }
+
+        /* Fixed column widths for desktop/laptop */
+        #linesheet-table th:nth-child(1), #linesheet-table td:nth-child(1) { width: 100px; }
+        #linesheet-table th:nth-child(2), #linesheet-table td:nth-child(2) { width: 120px; }
+        #linesheet-table th:nth-child(3), #linesheet-table td:nth-child(3) { width: 120px; }
+        #linesheet-table th:nth-child(4), #linesheet-table td:nth-child(4) { width: 120px; }
+        #linesheet-table th:nth-child(5), #linesheet-table td:nth-child(5) { width: 250px; }
+        #linesheet-table th:nth-child(6), #linesheet-table td:nth-child(6) { width: 80px; }
+        #linesheet-table th:nth-child(7), #linesheet-table td:nth-child(7) { width: 120px; }
+        #linesheet-table th:nth-child(8), #linesheet-table td:nth-child(8) { width: 150px; }
+        #linesheet-table th:nth-child(9), #linesheet-table td:nth-child(9) { width: 100px; }
+        #linesheet-table th:nth-child(10), #linesheet-table td:nth-child(10) { width: 100px; }
+        #linesheet-table th:nth-child(11), #linesheet-table td:nth-child(11) { width: 50px; text-align: center;}
+
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 8px;
+            cursor: pointer;
+            font-size: 0.8em;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .delete-btn:hover {
+            background-color: #da190b;
+        }
+
+        /* --- Media Queries for Responsiveness --- */
+
+        /* Tablet and smaller (e.g., max-width 768px) */
+        @media only screen and (max-width: 768px) {
+            body {
+                font-size: 12px;
+                padding: 5px;
+            }
+            .container {
+                padding: 10px;
+                max-width: calc(100vw - 10px);
+            }
+            .banner-container h2 {
+                font-size: 2em;
+            }
+            .controls {
+                justify-content: flex-start;
+                gap: 5px;
+            }
+            .controls input[type="text"],
+            .controls select,
+            .controls textarea {
+                max-width: none;
+                width: 100%;
+            }
+            .add-row-btn {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            tr {
+                border: 1px solid #ccc;
+                margin-bottom: 10px;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+
+            td {
+                border: none;
+                border-bottom: 1px solid #eee;
+                position: relative;
+                padding-left: 50%;
+                text-align: right;
+                white-space: normal;
+                word-wrap: break-word;
+            }
+            td:last-child {
+                border-bottom: 0;
+            }
+
+            td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 6px;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: bold;
+                color: #555;
+            }
+
+            .image-cell,
+            .image-cell .item-image,
+            .image-cell .image-input {
+                width: 100%;
+                height: auto;
+                max-height: 150px;
+                object-fit: contain;
+                padding: 5px;
+            }
+            .image-cell::before {
+                display: none;
+            }
+            .image-cell .drop-zone-overlay {
+                font-size: 1.2em;
+            }
+
+            .editable-input, .editable-select, .editable-textarea {
+                width: 100%;
+                text-align: right;
+            }
+            td.description-cell .editable-textarea {
+                text-align: left;
+            }
+            .delete-btn {
+                width: 100%;
+                padding: 8px;
+                font-size: 1em;
+            }
+            .price-cell .current-price-input {
+                 text-align: right;
+            }
+        }
+
+        /* Small mobile devices (e.g., max-width 480px) */
+        @media only screen and (max-width: 480px) {
+            body {
+                font-size: 10px;
+            }
+            .container {
+                padding: 5px;
+            }
+            .banner-container h2 {
+                font-size: 1.5em;
+            }
+            .controls input[type="text"],
+            .controls select,
+            .controls textarea {
+                font-size: 0.8em;
+                padding: 4px;
+            }
+            td {
+                padding-left: 45%;
+                font-size: 0.8em;
+            }
+            td::before {
+                width: 40%;
+            }
+            .item-image {
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-section">
+            <div class="banner-container">
+                <h2>LINESHEET</h2>
+            </div>
+        </div>
+
+        <div class="controls">
+            <label for="search-input">Search:</label>
+            <input type="text" id="search-input" placeholder="Style, Description, Color..." onkeyup="filterTable()">
+
+            <label for="classification-filter">Classification:</label>
+            <select id="classification-filter" onchange="filterTable()">
+                <option value="">All</option>
+            </select>
+
+            <label for="season-filter">Season:</label>
+            <select id="season-filter" onchange="filterTable()">
+                <option value="">All</option>
+            </select>
+
+            <label for="location-filter">Location:</label>
+            <select id="location-filter" onchange="filterTable()">
+                <option value="">All</option>
+            </select>
+
+            <label for="item-info-filter">Item Info:</label>
+            <select id="item-info-filter" onchange="filterTable()">
+                <option value="">All</option>
+            </select>
+            
+            <button class="add-row-btn" onclick="addNewRow()">+</button>
+        </div>
+
+        <div class="table-responsive">
+            <table id="linesheet-table">
+                <thead>
+                    <tr>
+                        <th data-column="Image">Image <span class="sort-arrow"></span></th>
+                        <th data-column="Style Number">Style Number <span class="sort-arrow"></span></th>
+                        <th data-column="Classification">Classification <span class="sort-arrow"></span></th>
+                        <th data-column="Season">Season <span class="sort-arrow"></span></th>
+                        <th data-column="Description">Description <span class="sort-arrow"></span></th>
+                        <th data-column="Color">Color <span class="sort-arrow"></span></th>
+                        <th data-column="Production Time">Production Time <span class="sort-arrow"></span></th>
+                        <th data-column="Price">Price <span class="sort-arrow"></span></th>
+                        <th data-column="Item Info">Item Info <span class="sort-arrow"></span></th>
+                        <th data-column="Location">Location <span class="sort-arrow"></span></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Raw data truncated to approximately the first 12 items
+        const rawData = `S24L05CG024COUTURE GOWNSPRING 24LACE STRAPLESS GOWN W/ RIBBON ON WAISTPINKSELF:KLAUBER, 39339 X, SCALLOP NET LACE, LAVENDER 
+COMBO 1:
+COMBO 2:
+COMBO 3: 
+LINING: KLAUBER $10,400S24L05CG024 FABRIC INFO.xlsxNEW YORK5SS21CG006COUTURE GOWNSPRING 21Strapless asymmetrical yellow bow bodice gown YELLOWSELF:ARGOMENTI TESSILI, GINEVRA 00136, YELLOW 
+COMBO 1:SAI SILK, FAILLE, YELLOW SF-048 
+COMBO 2: CALAMO, 4 PLY CREPE, YELLOW 3153, CAN ALSO TRY 3152 
+LINING: WEDTEX, ORGANDY FO081-776, L.IV-776 ARGOMENTI TESSILI, SAI SILK, CALAMO, WEDTEX $9,400SS21CG006 FABRIC INFO.xlsxNEW YORK5SS23CG020COUTURE GOWNSPRING 23STRAPLESS LEMON EMBROIDERY GOWN W/ TRAINYELLOWSELF: GRATACOS, PARIS, 515, 121 YELLOW 
+EMBROIDERY: KHODER BROS, 22-33139, LEMMON EMBROIDERY, DESERTO F-5001 
+LINING: SAI SILK, CDC, SF-152 GRATACOS, KHODER BROS, SAI SILK$9,700SS23CG020 FABRIC INFO.xlsxNEW YORK5FW22CG014COUTURE GOWNFALL 22LAYERED DEEP V-NECKLINE SAUCER GOWN GREENCOMBO 1:SHANAGAR, PO 3855 LAUREN PHILLIPS, PINK GREEN PURPLE SAUCERS, CUSTOM COLOR 
+COMBO 2: EASTERN SILK MILLS, ES-9200, REGULAR ORGANZA, 138 DARK GREEN 
+COMBO 3: EASTERN SILK MILLS, ES-9200, REGULAR ORGANZA , 132 LIGHTER GREEN 
+COMBO 4: CALAMO, REGULAR ORGANZA, 3125 PINK 
+BODICE LINING: EASTERN SILK MILLS, ES-500A, 4 PLY CREPE, 138 DARK GREEN (2 LAYERS) 
+SKIRT LINING: INTESA, LOTO, 661 GREEN 
+SHANAGAR, EASTERN SILK MILLS, CALAMO, INTESA$14,200FW22CG014 FABRIC INFO.xlsxNEW YORK1S24L05CD015COUTURE DRESSSPRING 24CHARTREUSE DROP WAIST LACE GOWN WITH RHINESTONE STRAPSYELLOWSELF: KLAUBER, 39339 X, SCALLOP NET LACE, LAVENDER 
+COMBO 1: SHANAGAR, Po#4801 CLIENT: S24 COLLECTION YELLOW BELT size: 1/2" X 31" (made into straps, make longer), SILVER W YELLOW 
+COMBO 2: EASTERN SILK MILLS, REG ORGANZA, 41 (GREEN) 
+COMBO 3: C&J, 4 PLY CREPE, 235 (CHARTREUSE) 
+LINING: SAI SILK, TAFFETA, TF-027 KLAUBER, SHANAGAR, EASTERN SILK MILLS, C&J, SAI SILK$10,000S24L05CD015 FABRIC INFO.xlsxNEW YORK1SS23CS001COUTURE SKIRTSPRING 23FLORAL PRINT FULL LENGTH SKIRTYELLOWSELF:GRATACOS, 55729, CITRUS FLORAL CLUSTER, 2 (YELLOW)
+LINING: INTESA, LOTO, 652 YELLOWGRATACOS, INTESA$7,100SS23CS001 FABRIC INFO.xlsxNEW YORKCELLARSS23CT001COUTURE TOPSPRING 23HIGH NECK SATIN FACED ORGANZA BOW TOPYELLOWSELF: C & J TEXTILES, CJ-840, SATIN FACED ORGANZA, 235 CITRUS
+C&J$4,300SS23CT001 FABRIC INFO.xlsxNEW YORKCELLARSS23CG008COUTURE GOWNSPRING 23STRAIGHT NECKLINE FLOWER EMBROIDERED GOWNGREENSELF: LUSI, AB 1222, DAISY FLOWER STENCIL, 7-14-4 GREEN 
+COMBO 1: GRATACOS, 515, PARIS, COL. 162 GREEN 
+LINING: INTESA, LOTTO, 661 GREEN LUSI, GRATACOS, INTESA$11,000SS23CG008 FABRIC INFO.xlsxNEW YORK5FW24RTWD010READY TO WEAR DRESSFALL 24SPIRAL PRINT HALTER DRESSMULTISELF: CARLO POZZI, ST143/7928, GEOMETRIC CIRCLE PRINT ORGANZA, PUNCH PINK MULTI VAR. 006 
+COMBO 1: EASTERN SILK, 4 PLY CREPE, 43 BUBBLE GUM PINK 
+COMBO 2: ALPHA PLUS, 1988 AQUA, 4 (PINK) 
+LINING: INTESA, LOTO, 341 
+CARLO POZZI, EASTERN SILK, ALPHA PLUS, INTESA$8,800FW24RTWD010 FABRIC INFO.xlsxNEW YORK5FW24CG001COUTURE GOWNFALL 24STRAPLESS MOON BODICE WITH BIRDSBLACKSELF: ALPHA PLUS, SS-343(LYON), SILKY CREPE, BLACK 
+COMBO 1: LUIL CO, LU2112026, WHITE AND GOLD TREE EMB ON BLACK TULLE, BLACK AND GOLD 
+COMBO 2: RUMI INDIA , 6.318A PO 5081, BIRD - WHITE THREAD BIRD W/ PEARLS 2.5", WHITE 
+COMBO 3: RUMI INDIA, 6.318 D PO 5081, BIRD - WHITE THREAD BIRD W/ SILVER 3.5", WHITE / SILVER 
+COMBO 4: RUMI INDIA, 6/318 B PO 5081, BIRD - BLACK THREAD PERCH 2", BLACK / GREY ALPHA PLUS, LULI CO, RUMI INDIA $8,800FW24CG001 FABRIC INFO.xlsxNEW YORK1FW24CD009COUTURE DRESSFALL 24PEARL MINI DRESSWHITESELF: SAI SILK, DOUBLE FACED DUCHESS SATIN, WHITE 
+COMBO 1: RUMI INDIA, 6.303, PEARL TRIM ON TULLE 
+COMBO 2: SHANAGAR, PO 4565 55" WIDE, STACEY HENNINGSEN (USED BRIDAL PEARL VEIL) 
+LINING: INTESA, LOTO SAI SILK, RUMI INDIA, SHANAGAR, INTESA$12,500FW24CD009 FABRIC INFO.xlsxNEW YORK2SS25BG003 (CLARA)BRIDAL GOWNSPRING 25PEARL COLUMN GOWNWHITESELF: GRATACOS, 584, MIRÓ DOUBLE FACE TWILL, 71 (WHITER SIZE)
+COMBO 1: UNCOMMON GLOBAL, UA07LC10, CIRCLE LACE, WHITE
+LINING: INTESA , LOTO, 701 WHITEGRATACOS, UNCOMMON GLOBAL, INTESA$9,400`;
+
+        // Function to parse the raw text data into structured objects
+        function parseData(text) {
+            const data = [];
+            const recordDelimiter = /(S\d{2}[A-Z]\d{2}[A-Z]{2}\d{3,}|FW\d{2}[A-Z]{2}[A-Z]\d{3,}|SS\d{2}[A-Z]{2}[A-Z]\d{3,}|F\d{2}[A-Z]\d{2}[A-Z]\d{3,}|SLS\d{3}[A-Z]{2}\d{3,})/g;
+            const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+            let currentItemRawContent = '';
+            let currentStyleNumber = '';
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const styleNumberMatch = line.match(recordDelimiter);
+
+                if (styleNumberMatch && line.startsWith(styleNumberMatch[0])) {
+                    if (currentStyleNumber !== '') {
+                        data.push(processRawItem(currentStyleNumber, currentItemRawContent));
+                    }
+                    currentStyleNumber = styleNumberMatch[0];
+                    currentItemRawContent = line.substring(currentStyleNumber.length).trim();
+                } else {
+                    currentItemRawContent += ' ' + line;
+                }
+            }
+
+            if (currentStyleNumber !== '') {
+                data.push(processRawItem(currentStyleNumber, currentItemRawContent));
+            }
+
+            return data;
+        }
+
+        function processRawItem(styleNumber, rawContent) {
+            const item = {
+                'Image': '',
+                'Status': 'A',
+                'Style Number': styleNumber,
+                'Classification': 'RTW',
+                'Season': 'Spring/Summer',
+                'Description': '',
+                'Color': '',
+                'Fabric': '',
+                'Production Time': '',
+                'OriginalPrice': 0,
+                'CurrentPrice': 0,
+                'Item Info': 'In Store',
+                'Location': 'New York',
+                'Notes': ''
+            };
+
+            let remainingContent = rawContent;
+
+            const classSeasonPattern = /^(COUTURE GOWN|COUTURE DRESS|COUTURE SKIRT|COUTURE TOP|READY TO WEAR DRESS|READY TO WEAR JACKET|READY TO WEAR PANT|READY TO WEAR SKIRT|READY TO WEAR TOP|OVERLAY|BRIDAL GOWN|READY OUTERWEAR)\s*(SPRING\s*\d{2}|FALL\s*\d{2}|SPRING|FALL|SEASONLESS|HOLIDAY|\d{2})/;
+            let match = remainingContent.match(classSeasonPattern);
+            if (match) {
+                let classRaw = match[1];
+                if (classRaw.includes('COUTURE')) item.Classification = 'Evening';
+                if (classRaw.includes('BRIDAL')) item.Classification = 'Bridal';
+                if (classRaw.includes('READY TO WEAR') || classRaw.includes('OVERLAY')) item.Classification = 'RTW';
+
+                let seasonRaw = match[2];
+                if (seasonRaw.toLowerCase().includes('spring')) item.Season = 'Spring/Summer';
+                if (seasonRaw.toLowerCase().includes('fall') || seasonRaw.toLowerCase().includes('holiday')) item.Season = 'Fall/Winter';
+                remainingContent = remainingContent.substring(match[0].length).trim();
+            }
+
+            const priceRegex = /\$([\d,\.]+)/;
+            const priceMatch = remainingContent.match(priceRegex);
+
+            let contentBeforePrice = remainingContent;
+            let contentAfterPrice = '';
+
+            if (priceMatch) {
+                item.OriginalPrice = parseFloat(priceMatch[1].replace(/,/g, '')) || 0;
+                item.CurrentPrice = item.OriginalPrice;
+                contentBeforePrice = remainingContent.substring(0, priceMatch.index).trim();
+                contentAfterPrice = remainingContent.substring(priceMatch.index + priceMatch[0].length).trim();
+            }
+
+            const colorKeywords = ['PINK', 'YELLOW', 'GREEN', 'MULTI', 'BLACK', 'WHITE', 'RED', 'SILVER', 'NAVY', 'BLUE', 'PURPLE', 'CORAL', 'CREAM'];
+            let earliestColorIndex = -1;
+            let foundColor = '';
+            for (const color of colorKeywords) {
+                const index = contentBeforePrice.indexOf(color);
+                if (index !== -1 && (earliestColorIndex === -1 || index < earliestColorIndex)) {
+                    earliestColorIndex = index;
+                    foundColor = color;
+                }
+            }
+
+            if (earliestColorIndex !== -1) {
+                item.Color = foundColor;
+                item.Fabric = contentBeforePrice.substring(earliestColorIndex).trim();
+            } else {
+                item.Fabric = contentBeforePrice;
+            }
+
+            item.Fabric = item.Fabric.replace(/(SELF:|COMBO \d:|LINING:)\s*/g, '')
+                                     .replace(/(ARGOMENTI TESSILI|SAI SILK|CALAMO|WEDTEX|GRATACOS|KHODER BROS|SHANAGAR|EASTERN SILK MILLS|C&J|ALPHA PLUS|INTESA|CARLO POZZI|LUSI|BELLA TELA|PROWONG TEXTILES|JMR|UNCOMMON GLOBAL|BERENSTEIN TEXTILES|CANDID ENTERPRISES|EUROTEXTILE|RUMI INDIA|AKIN TEKSTIL|MAX VOGUE)\b/gi, '')
+                                     .replace(/\.xlsx|FABRIC INFO|INFO\.xlsx/gi, '').trim();
+
+            remainingContent = contentAfterPrice;
+
+            const locationKeywords = ['NEW YORK', 'DALLAS', 'WHOLESALE'];
+            let locationFound = false;
+            for (const loc of locationKeywords) {
+                const locMatch = remainingContent.match(new RegExp(`\\b${loc}\\b`, 'g'));
+                if (locMatch) {
+                    item.Location = locMatch[0];
+                    remainingContent = remainingContent.replace(locMatch[0], '').trim();
+                    locationFound = true;
+                    break;
+                }
+            }
+            if (!locationFound) item.Location = 'New York';
+
+            if (rawContent.includes('ON LOAN') || rawContent.includes('OUT ON LOAN')) {
+                item['Item Info'] = 'Rented';
+                item['Status'] = 'NA';
+            } else if (rawContent.includes('Sold')) {
+                item['Item Info'] = 'Sold';
+                item['Status'] = 'NA';
+            } else if (rawContent.includes('MISSING INFORMATION') || rawContent.includes('PRICE CHECK') || rawContent.includes('MISSING ON LINESHEET') || rawContent.includes('DUPLICATE') || rawContent.includes('IMAGE')) {
+                item['Status'] = 'NA';
+            } else {
+                item['Item Info'] = 'In Store';
+                item['Status'] = 'A';
+            }
+
+            item.Notes = remainingContent.replace(/(\.xlsx|\d+|CELLAR|LOOK \d|FABRIC INFO|BELT \$[\d,]+|ON LOAN FOR LL ON \d{1,2}\/\d{1,2}\/\d{2,4})\s*/g, '').trim();
+
+            if (rawContent.includes('BELT $2195')) item.Notes = (item.Notes ? item.Notes + ' ' : '') + 'BELT $2195';
+            if (rawContent.includes('ON LOAN FOR LL ON 9/6/24')) item.Notes = (item.Notes ? item.Notes + ' ' : '') + 'ON LOAN FOR LL ON 9/6/24';
+
+            return item;
+        }
+
+        // --- Local Storage Functions ---
+        function saveDataToLocalStorage() {
+            try {
+                localStorage.setItem('nardosLinesheetData', JSON.stringify(linesheetData));
+                console.log('Linesheet data saved automatically.');
+            } catch (e) {
+                console.error('Error saving data to local storage:', e);
+                if (e.name === 'QuotaExceededError') {
+                    alert('Browser storage limit reached. Could not save all data. Please clear some space or export data.');
+                }
+            }
+        }
+
+        function loadDataFromLocalStorage() {
+            try {
+                const savedData = localStorage.getItem('nardosLinesheetData');
+                if (savedData) {
+                    linesheetData = JSON.parse(savedData);
+                    console.log('Linesheet data loaded from local storage.');
+                    return true;
+                }
+            } catch (e) {
+                console.error('Error parsing saved data from local storage, loading default:', e);
+            }
+            return false;
+        }
+        // --- End Local Storage Functions ---
+
+        let linesheetData = [];
+        let currentSortColumn = null;
+        let currentSortDirection = 'asc';
+
+        const tableBody = document.querySelector('#linesheet-table tbody');
+        const tableHeaders = document.querySelectorAll('#linesheet-table th');
+        const classificationFilter = document.getElementById('classification-filter');
+        const seasonFilter = document.getElementById('season-filter');
+        const locationFilter = document.getElementById('location-filter');
+        const itemInfoFilter = document.getElementById('item-info-filter');
+
+        const classificationOptions = ['Bridal', 'Evening', 'RTW'];
+        const seasonOptions = ['Fall/Winter', 'Spring/Summer'];
+        const locationOptions = ['New York', 'Dallas', 'Wholesale'];
+        const itemInfoOptions = ['Sold', 'In Store', 'Rented'];
+        const statusOptions = ['A', 'NA'];
+
+        function populateFilters() {
+            classificationFilter.innerHTML = '<option value="">All</option>';
+            classificationOptions.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = option;
+                classificationFilter.appendChild(opt);
+            });
+
+            seasonFilter.innerHTML = '<option value="">All</option>';
+            seasonOptions.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = option;
+                seasonFilter.appendChild(opt);
+            });
+
+            locationFilter.innerHTML = '<option value="">All</option>';
+            locationOptions.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = option;
+                locationFilter.appendChild(opt);
+            });
+
+            itemInfoFilter.innerHTML = '<option value="">All</option>';
+            itemInfoOptions.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = option;
+                itemInfoFilter.appendChild(opt);
+            });
+        }
+
+        function renderTable(dataToRender) {
+            tableBody.innerHTML = '';
+
+            const columnOrder = [
+                'Image', 'Style Number', 'Classification', 'Season', 'Description',
+                'Color', 'Production Time', 'Price', 'Item Info', 'Location', 'Actions'
+            ];
+
+            dataToRender.forEach(item => {
+                const row = tableBody.insertRow();
+                row.dataset.styleNumber = item['Style Number'];
+
+                columnOrder.forEach(colName => {
+                    const cell = row.insertCell();
+                    cell.setAttribute('data-label', colName === 'Price' ? 'Price' : colName);
+
+                    if (colName === 'Image') {
+                        cell.classList.add('image-cell');
+                        const imageUrl = item.Image || `https://placehold.co/50x50/cccccc/000000?text=No+Img`;
+                        cell.innerHTML = `
+                            <img src="${imageUrl}" class="item-image" onerror="this.onerror=null;this.src='https://placehold.co/50x50/cccccc/000000?text=No+Img';">
+                            <input type="text" class="image-input editable-input" value="${item.Image || ''}" placeholder="Image URL" data-field="Image" onchange="updateCellData(this)">
+                            <div class="drop-zone-overlay"></div>
+                        `;
+                        cell.addEventListener('dragover', handleDragOver);
+                        cell.addEventListener('dragleave', handleDragLeave);
+                        cell.addEventListener('drop', handleDrop);
+
+                    } else if (colName === 'Classification') {
+                        cell.innerHTML = `<select class="editable-select" data-field="Classification" onchange="updateCellData(this)">
+                            ${classificationOptions.map(option => `<option value="${option}" ${item.Classification === option ? 'selected' : ''}>${option}</option>`).join('')}
+                        </select>`;
+                    } else if (colName === 'Season') {
+                        cell.innerHTML = `<select class="editable-select" data-field="Season" onchange="updateCellData(this)">
+                            ${seasonOptions.map(option => `<option value="${option}" ${item.Season === option ? 'selected' : ''}>${option}</option>`).join('')}
+                        </select>`;
+                    } else if (colName === 'Location') {
+                        cell.innerHTML = `<select class="editable-select" data-field="Location" onchange="updateCellData(this)">
+                            ${locationOptions.map(option => `<option value="${option}" ${item.Location === option ? 'selected' : ''}>${option}</option>`).join('')}
+                        </select>`;
+                    } else if (colName === 'Item Info') {
+                        cell.innerHTML = `<select class="editable-select" data-field="Item Info" onchange="updateCellData(this)">
+                            ${itemInfoOptions.map(option => `<option value="${option}" ${item['Item Info'] === option ? 'selected' : ''}>${option}</option>`).join('')}
+                        </select>`;
+                    } else if (colName === 'Price') {
+                        cell.classList.add('price-cell');
+                        cell.innerHTML = `
+                            <input type="number" class="current-price-input editable-input" value="${item.CurrentPrice !== undefined ? item.CurrentPrice : ''}" placeholder="0" data-field="CurrentPrice" oninput="updatePrice(this)">
+                            <span class="original-price">Original: ${formatPrice(item.OriginalPrice)}</span>
+                            <span class="price-diff" id="diff-${item['Style Number']}"></span>
+                        `;
+                        calculatePriceDifference(item['Style Number'], item.OriginalPrice, item.CurrentPrice);
+                    } else if (colName === 'Description') {
+                        cell.classList.add('description-cell');
+                        cell.innerHTML = `<textarea class="editable-textarea" data-field="${colName}" onchange="updateCellData(this)">${item[colName] || ''}</textarea>`;
+                    } else if (colName === 'Actions') {
+                        cell.innerHTML = `<button class="delete-btn" onclick="deleteRow('${item['Style Number']}')">Delete</button>`;
+                    }
+                    else {
+                        const value = item[colName] !== undefined ? item[colName] : '';
+                        cell.innerHTML = `<input type="text" class="editable-input" value="${value}" data-field="${colName}" onchange="updateCellData(this)">`;
+                    }
+                });
+            });
+        }
+
+        function formatPrice(price) {
+            return price !== undefined && price !== null ? `$${price.toLocaleString('en-US')}` : '';
+        }
+
+        function updateCellData(element) {
+            const row = element.closest('tr');
+            const styleNumber = row.dataset.styleNumber;
+            const field = element.dataset.field;
+            let value = element.value;
+
+            const item = linesheetData.find(d => d['Style Number'] === styleNumber);
+            if (item) {
+                if (field === 'OriginalPrice' || field === 'CurrentPrice') {
+                    value = parseFloat(value) || 0;
+                }
+                item[field] = value;
+
+                if (field === 'Style Number') {
+                    row.dataset.styleNumber = value;
+                }
+
+                if (field === 'Image') {
+                    const imgElement = row.querySelector('.item-image');
+                    if (imgElement) {
+                        imgElement.src = value || `https://placehold.co/50x50/cccccc/000000?text=No+Img`;
+                    }
+                }
+                saveDataToLocalStorage();
+            }
+        }
+
+        function updatePrice(inputElement) {
+            updateCellData(inputElement);
+            const row = inputElement.closest('tr');
+            const styleNumber = row.dataset.styleNumber;
+            const item = linesheetData.find(d => d['Style Number'] === styleNumber);
+            if (item) {
+                calculatePriceDifference(item['Style Number'], item.OriginalPrice, item.CurrentPrice);
+            }
+        }
+
+        function calculatePriceDifference(styleNumber, originalPrice, currentPrice) {
+            const diffElement = document.getElementById(`diff-${styleNumber}`);
+            if (diffElement) {
+                if (originalPrice !== undefined && currentPrice !== undefined) {
+                    const diff = currentPrice - originalPrice;
+                }
+            }
+        }
+
+        function filterTable() {
+            const searchText = document.getElementById('search-input').value.toLowerCase();
+            const selectedClassification = classificationFilter.value;
+            const selectedSeason = seasonFilter.value;
+            const selectedLocation = locationFilter.value;
+            const selectedItemInfo = itemInfoFilter.value;
+
+            const filteredData = linesheetData.filter(item => {
+                const matchesSearch = (item['Style Number'] || '').toLowerCase().includes(searchText) ||
+                                      (item.Description || '').toLowerCase().includes(searchText) ||
+                                      (item.Color || '').toLowerCase().includes(searchText);
+
+                const matchesClassification = selectedClassification === '' || item.Classification === selectedClassification;
+                const matchesSeason = selectedSeason === '' || item.Season === selectedSeason;
+                const matchesLocation = selectedLocation === '' || item.Location === selectedLocation;
+                const matchesItemInfo = selectedItemInfo === '' || item['Item Info'] === selectedItemInfo;
+
+                return matchesSearch && matchesClassification && matchesSeason && matchesLocation && matchesItemInfo;
+            });
+            renderTable(filteredData);
+        }
+
+        function sortTable(column) {
+            if (currentSortColumn === column) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = column;
+                currentSortDirection = 'asc';
+            }
+
+            linesheetData.sort((a, b) => {
+                let valA = a[column];
+                let valB = b[column];
+
+                if (column === 'Price') {
+                    valA = a.CurrentPrice;
+                    valB = b.CurrentPrice;
+                }
+
+                valA = valA !== undefined ? valA : '';
+                valB = valB !== undefined ? valB : '';
+
+                let comparison = 0;
+                if (typeof valA === 'string' && typeof valB === 'string') {
+                    comparison = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+                } else if (typeof valA === 'number' && typeof valB === 'number') {
+                    comparison = valA - valB;
+                } else {
+                    comparison = String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' });
+                }
+
+                return currentSortDirection === 'asc' ? comparison : -comparison;
+            });
+
+            tableHeaders.forEach(header => {
+                const arrow = header.querySelector('.sort-arrow');
+                if (arrow) {
+                    arrow.textContent = '';
+                }
+            });
+            const activeHeader = document.querySelector(`th[data-column="${column}"] .sort-arrow`);
+            if (activeHeader) {
+                activeHeader.textContent = currentSortDirection === 'asc' ? '▲' : '▼';
+            }
+
+            filterTable();
+        }
+
+        function addNewRow() {
+            const newItem = {
+                'Image': '',
+                'Status': 'A',
+                'Style Number': `NEW_ITEM_${Date.now()}`,
+                'Classification': 'RTW',
+                'Season': 'Spring/Summer',
+                'Description': '',
+                'Color': '',
+                'Fabric': '',
+                'Production Time': '',
+                'OriginalPrice': 0,
+                'CurrentPrice': 0,
+                'Item Info': 'In Store',
+                'Location': 'New York',
+                'Notes': 'New item added'
+            };
+            linesheetData.unshift(newItem);
+            renderTable(linesheetData);
+            document.querySelector('.container').scrollTop = 0;
+            saveDataToLocalStorage();
+        }
+
+        function deleteRow(styleNumberToDelete) {
+            if (confirm(`Are you sure you want to delete item with Style Number: ${styleNumberToDelete}?`)) {
+                linesheetData = linesheetData.filter(item => item['Style Number'] !== styleNumberToDelete);
+                renderTable(linesheetData);
+                saveDataToLocalStorage();
+            }
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+
+            const cell = event.currentTarget;
+            const inputElement = cell.querySelector('.image-input');
+            const imgElement = cell.querySelector('.item-image');
+            const row = cell.closest('tr');
+            const styleNumber = row.dataset.styleNumber;
+            const item = linesheetData.find(d => d['Style Number'] === styleNumber);
+
+            if (!item) return;
+
+            if (event.dataTransfer.files.length > 0) {
+                const file = event.dataTransfer.files[0];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const dataUrl = e.target.result;
+                        item.Image = dataUrl;
+                        imgElement.src = dataUrl;
+                        inputElement.value = dataUrl;
+                        saveDataToLocalStorage();
+                        console.warn("Dropped image file converted to Data URL. This will NOT persist on page refresh unless saved manually or via local storage.");
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    console.warn("Dropped file is not an image.");
+                }
+            } else if (event.dataTransfer.getData('text/plain')) {
+                const droppedText = event.dataTransfer.getData('text/plain');
+                if (droppedText.startsWith('http://') || droppedText.startsWith('https://')) {
+                    item.Image = droppedText;
+                    imgElement.src = droppedText;
+                    inputElement.value = droppedText;
+                    saveDataToLocalStorage();
+                } else {
+                    console.warn("Dropped text is not a valid image URL.");
+                }
+            }
+        }
+
+        tableHeaders.forEach(header => {
+            const column = header.dataset.column;
+            if (column) {
+                header.addEventListener('click', () => sortTable(column));
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!loadDataFromLocalStorage()) {
+                linesheetData = parseData(rawData);
+            }
+            populateFilters();
+            renderTable(linesheetData);
+        });
+    </script>
+</body>
+</html>
